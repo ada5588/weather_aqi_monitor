@@ -4,3 +4,4 @@ __*
 .vscode/
 logs/
 venv/
+*.log
