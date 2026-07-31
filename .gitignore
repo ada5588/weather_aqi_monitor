@@ -1,0 +1,6 @@
+cache/
+*.cache*
+__*
+.vscode/
+logs/
+venv/
