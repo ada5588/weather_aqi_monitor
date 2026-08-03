@@ -14,10 +14,10 @@ def get_city_data():
         conn.close()
 
 def get_weather_data(city_data):
-    import logging
-    logging.basicConfig(filename="weather.log",
-    level=logging.ERROR,
-    format="%(asctime)s %(levelname)s %(message)s")
+    # import logging
+    # logging.basicConfig(filename="weather.log",
+    # level=logging.ERROR,
+    # format="%(asctime)s %(levelname)s %(message)s")
     
     cities = list(city_data.keys())
     url = "https://api.open-meteo.com/v1/forecast"
@@ -33,7 +33,8 @@ def get_weather_data(city_data):
     try:
         responses = openmeteo.weather_api(url, params = params)
     except Exception as e:
-        logging.exception(f"Failed to fetch weather data: {e}")
+        # logging.exception(f"Failed to fetch weather data: {e}")
+        print(f"Failed to fetch weather data: {e}")
         return None
     
     weather_data = {}
@@ -42,3 +43,29 @@ def get_weather_data(city_data):
 
     return weather_data
 
+def get_aqi_data(city_data):
+    openmeteo = get_openmeteo_client()
+    # Make sure all required weather variables are listed here
+    # The order of variables in hourly or daily is important to assign them correctly below
+    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
+    
+    cities = list(city_data.keys())
+    params = {
+        "latitude": [city_data[i][0] for i in cities],
+	    "longitude": [city_data[i][1] for i in cities],
+        "hourly": "us_aqi",
+        "forecast_days": 3,
+    }
+    try:
+        responses = openmeteo.weather_api(url, params = params)
+    except Exception as e:
+        # logging.exception(f"Failed to fetch AQI data: {e}")
+        print(f"Failed to fetch AQI data: {e}")
+        return None
+
+    aqi_data = {}
+    for i in range(len(cities)):
+        aqi_data[cities[i]] = responses[i]
+
+    return aqi_data
+	

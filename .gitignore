@@ -5,3 +5,4 @@ __*
 logs/
 venv/
 *.log
+.env

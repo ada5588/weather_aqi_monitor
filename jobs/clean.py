@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 
-def unpack_weather_response(weather_data):
+def unpack_response(response, response_type='weather'):
 	# Process hourly data. The order of variables needs to be the same as requested.
-	cities = list(weather_data.keys())
+	cities = list(response.keys())
 	
 	combined_dataframe = []
 	for i in cities:
-		hourly = weather_data[i].Hourly()
+		hourly = response[i].Hourly()
 
 		hourly_data = {
 			"timestamp": pd.date_range(
@@ -17,12 +17,15 @@ def unpack_weather_response(weather_data):
 				inclusive="left",
 			).tz_convert("America/New_York")
 		}
-		hourly_data["temperature"] = hourly.Variables(0).ValuesAsNumpy()
-		hourly_data["relative_humidity"] = hourly.Variables(1).ValuesAsNumpy()
-		hourly_data["apparent_temperature"] = hourly.Variables(2).ValuesAsNumpy()
-		hourly_data["rain"] = hourly.Variables(3).ValuesAsNumpy()
-		hourly_data["precipitation_probability"] = hourly.Variables(4).ValuesAsNumpy()
-		hourly_data["uv_index"] = hourly.Variables(5).ValuesAsNumpy()
+		if response_type == 'weather':
+			hourly_data["temperature"] = hourly.Variables(0).ValuesAsNumpy()
+			hourly_data["relative_humidity"] = hourly.Variables(1).ValuesAsNumpy()
+			hourly_data["apparent_temperature"] = hourly.Variables(2).ValuesAsNumpy()
+			hourly_data["rain"] = hourly.Variables(3).ValuesAsNumpy()
+			hourly_data["precipitation_probability"] = hourly.Variables(4).ValuesAsNumpy()
+			hourly_data["uv_index"] = hourly.Variables(5).ValuesAsNumpy()
+		elif response_type == 'aqi':
+			hourly_data["us_aqi"] = hourly.Variables(0).ValuesAsNumpy()
 
 		hourly_dataframe = pd.DataFrame(data=hourly_data)
 
@@ -33,6 +36,7 @@ def unpack_weather_response(weather_data):
 		combined_dataframe.append(hourly_data)
 	
 	return pd.concat(combined_dataframe, ignore_index=True)
+
 
 
 def clean_weather_data(hourly_dataframe):
@@ -53,5 +57,11 @@ def clean_weather_data(hourly_dataframe):
 
 	# check uv index
 	hourly_dataframe["uv_index"] = hourly_dataframe["uv_index"].where(hourly_dataframe["uv_index"]>=0.0)
+
+	return hourly_dataframe
+
+def clean_aqi_data(hourly_dataframe):
+	# check us_aqi
+	hourly_dataframe["us_aqi"] = hourly_dataframe["us_aqi"].where(hourly_dataframe["us_aqi"].between(0.0, 500.0))
 
 	return hourly_dataframe
