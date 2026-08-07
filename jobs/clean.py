@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 def unpack_response(response, response_type='weather'):
 	# Process hourly data. The order of variables needs to be the same as requested.
@@ -122,7 +121,7 @@ ALERT_COLUMNS = [
 
 def _filter_daytime_hours(dataframe):
 	daytime_hours = dataframe["timestamp"].dt.hour
-	return dataframe.loc[(daytime_hours >= 9) & (daytime_hours <= 21)].copy()
+	return dataframe.loc[(daytime_hours >= 7) & (daytime_hours <= 20)].copy()
 
 
 def _empty_alert_dataframe():

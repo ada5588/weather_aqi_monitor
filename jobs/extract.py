@@ -1,11 +1,12 @@
 from connectors.api_client import get_openmeteo_client
 from connectors.db_client import get_postgres_connection
+from config import CITY_DATA_TABLE
 
 def get_city_data():
     conn = get_postgres_connection("readonly")
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT city_id, latitude, longitude FROM city_data')
+            cur.execute(f"SELECT city_id, latitude, longitude FROM {CITY_DATA_TABLE}")
             return {
                 city_id: (latitude, longitude)
                 for city_id, latitude, longitude in cur.fetchall()
