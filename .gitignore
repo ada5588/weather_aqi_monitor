@@ -6,3 +6,4 @@ logs/
 venv/
 *.log
 .env
+reports/*.html
