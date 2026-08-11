@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Today's weather in {{ city_name }}</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			color: #222;
+			margin: 40px;
+			line-height: 1.5;
+		}
+		h1 {
+			font-size: 24px;
+			margin-bottom: 24px;
+		}
+		h2 {
+			font-size: 18px;
+			margin-top: 32px;
+			margin-bottom: 12px;
+		}
+		.chart {
+			margin: 16px 0 32px;
+		}
+		.summary {
+			margin-bottom: 20px;
+		}
+		ul {
+			padding-left: 20px;
+		}
+		li {
+			margin-bottom: 8px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Today's weather in {{ city_name }}</h1>
+
+	<div class="chart">
+		<img src="data:image/png;base64,{{ chart_base64 }}" alt="Temperature and precipitation chart">
+	</div>
+
+	<h2>Daytime activity suggestions</h2>
+	<p class="summary">{{ summary }}</p>
+
+	{% for section in alert_sections %}
+	<h2>{{ section.title }}</h2>
+	<ul>
+		{% for alert in section.alerts %}
+		<li>{{ alert.message }} — {{ alert.period }}</li>
+		{% endfor %}
+	</ul>
+	{% endfor %}
+</body>
+</html>

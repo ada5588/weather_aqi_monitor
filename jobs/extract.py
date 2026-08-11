@@ -55,7 +55,7 @@ def get_aqi_data(city_data):
         "latitude": [city_data[i][0] for i in cities],
 	    "longitude": [city_data[i][1] for i in cities],
         "hourly": "us_aqi",
-        "forecast_days": 3,
+        "forecast_days": 2,
     }
     try:
         responses = openmeteo.weather_api(url, params = params)

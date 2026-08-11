@@ -21,6 +21,4 @@ def get_postgres_connection(profile="readonly"):
     )
 
 def get_sqlalchemy_engine(profile="write"):
-    prefix = PROFILES[profile]
-    return create_engine(
-        f"postgresql://{os.getenv(f"{prefix}_USER")}:{os.getenv(f"{prefix}_PASSWORD")}@{os.getenv(f"{prefix}_HOST")}:{os.getenv(f"{prefix}_PORT", 5432)}/{os.getenv(f"{prefix}_DB")}")
+    return create_engine(_build_database_url(profile))
