@@ -1,0 +1,11 @@
+openmeteo-requests
+requests-cache
+retry-requests
+pandas
+numpy
+psycopg2-binary
+python-dotenv
+pytest
+plotly
+kaleido
+jinja2

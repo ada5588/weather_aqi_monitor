@@ -1,4 +1,3 @@
-import argparse
 import base64
 import re
 from pathlib import Path
@@ -139,10 +138,7 @@ def build_chart_base64(hourly_data):
 		),
 		secondary_y=False,
 	)
-# 	figure.update_xaxes(
-# 		tickformat='%H',
-# 		tickangle=-45
-# )
+
 	figure.add_trace(
 		go.Scatter(
 			x=chart_frame["hour_label"],
@@ -160,6 +156,21 @@ def build_chart_base64(hourly_data):
 		height=420,
 		margin=dict(l=40, r=40, t=60, b=40),
 		legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+		yaxis=dict(
+        showgrid=True,
+        gridcolor='LightBlue',
+        gridwidth=1.5,
+        griddash='dot'
+    ),
+    
+		yaxis2=dict(
+        showgrid=True,
+        gridcolor='lightcoral',
+        gridwidth=1,
+        griddash='dashdot',
+        overlaying='y',  # Keeps them positioned over the same plot space
+        side='right'     # Puts the secondary scale numbers on the right
+    ),
 	)
 	figure.update_yaxes(title_text="Temperature (°C)", secondary_y=False)
 	figure.update_yaxes(title_text="Precipitation (%)", secondary_y=True, range=[0, 100])
@@ -202,20 +213,3 @@ def generate_report(city_name, output_path=None):
 
 	html_path.write_text(html_content, encoding="utf-8")
 	return html_path
-
-
-def main():
-	parser = argparse.ArgumentParser(description="Generate a city weather report.")
-	parser.add_argument("city_name", help="City name stored in city_data.city_name")
-	parser.add_argument(
-		"--output",
-		help="Optional HTML output path.",
-	)
-	args = parser.parse_args()
-
-	html_path = generate_report(args.city_name, args.output)
-	print(f"HTML report: {html_path}")
-
-
-if __name__ == "__main__":
-	main()
