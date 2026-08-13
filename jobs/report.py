@@ -48,9 +48,14 @@ def fetch_city_hourly_data(city_name):
 		FROM {WEATHER_AQI_HOURLY_TABLE} w
 		JOIN {CITY_DATA_TABLE} c ON w.city_id = c.city_id
 		WHERE c.city_name = :city_name
-			AND w.timestamp >= (CURRENT_DATE AT TIME ZONE 'America/New_York')
+			AND w.timestamp >= (
+				date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE '{REPORT_TIMEZONE}')
+				AT TIME ZONE '{REPORT_TIMEZONE}'
+			)
 			AND w.timestamp < (
-				(CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE 'America/New_York'
+				(date_trunc('day', CURRENT_TIMESTAMP AT TIME ZONE '{REPORT_TIMEZONE}')
+					+ INTERVAL '1 day')
+				AT TIME ZONE '{REPORT_TIMEZONE}'
 			)
 		ORDER BY w.timestamp
 	""")
@@ -82,12 +87,18 @@ def build_summary(alerts):
 	if alerts.empty:
 		return "No daytime activity suggestions for today."
 
-	parts = []
-	for _, alert in alerts.sort_values("start_time").iterrows():
+	parts = {}
+	for _, alert in alerts.iterrows():
 		period = format_period(alert["start_time"], alert["end_time"])
-		parts.append(f"{alert['message']} {period}.")
+		if alert['message'] not in parts:
+			parts[alert['message']] = []
+		parts[alert['message']].append(period)
+		
 
-	return " ".join(parts)
+	return '\n'.join(
+		f'{k}: {', '.join(v)}'
+		for k, v in parts.items()
+	)
 
 
 def build_alert_sections(alerts):
@@ -128,17 +139,7 @@ def build_chart_base64(hourly_data):
 	chart_frame = _build_chart_frame(hourly_data)
 
 	figure = make_subplots(specs=[[{"secondary_y": True}]])
-	figure.add_trace(
-		go.Scatter(
-			x=chart_frame["hour_label"],
-			y=chart_frame["temperature"],
-			name="Temperature (°C)",
-			mode="lines+markers",
-			connectgaps=False,
-		),
-		secondary_y=False,
-	)
-
+	
 	figure.add_trace(
 		go.Scatter(
 			x=chart_frame["hour_label"],
@@ -147,8 +148,21 @@ def build_chart_base64(hourly_data):
 			mode="lines+markers",
 			connectgaps=False,
 		),
+		secondary_y=False,
+	)
+	
+	figure.add_trace(
+		go.Scatter(
+			x=chart_frame["hour_label"],
+			y=chart_frame["temperature"],
+			name="Temperature (°C)",
+			mode="lines+markers",
+			connectgaps=False,
+		),
 		secondary_y=True,
 	)
+
+	
 	figure.update_layout(
 		title="Temperature and precipitation probability (0:00–23:00)",
 		xaxis_title="Hour",
@@ -172,8 +186,9 @@ def build_chart_base64(hourly_data):
         side='right'     # Puts the secondary scale numbers on the right
     ),
 	)
-	figure.update_yaxes(title_text="Temperature (°C)", secondary_y=False)
-	figure.update_yaxes(title_text="Precipitation (%)", secondary_y=True, range=[0, 100])
+	
+	figure.update_yaxes(title_text="Precipitation (%)", secondary_y=False, range=[0, 100])
+	figure.update_yaxes(title_text="Temperature (°C)", secondary_y=True)
 
 	image_bytes = figure.to_image(format="png", scale=2)
 	return base64.b64encode(image_bytes).decode("utf-8")
@@ -203,7 +218,7 @@ def _default_output_paths(city_name):
 
 def generate_report(city_name, output_path=None):
 	hourly_data = fetch_city_hourly_data(city_name)
-	city_name = hourly_data["city_name"].iloc[0]
+	# city_name = hourly_data["city_name"].iloc[0]
 	alerts = calculate_alert_data(hourly_data)
 	html_content = render_report_html(city_name, hourly_data, alerts)
 
