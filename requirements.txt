@@ -9,3 +9,4 @@ pytest
 plotly
 kaleido
 jinja2
+sqlalchemy
