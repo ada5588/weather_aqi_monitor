@@ -5,16 +5,17 @@ A daily pipeline that fetches hourly weather and air quality data for multiple c
 ## What it does
 
 1. **Extract** — pull city locations from Postgres and fetch weather + AQI data from the Open-Meteo API
-2. **Clean** — validate data ranges and calculate daytime activity alerts (outdoor workout, sun protection, stay indoors, etc.)
-3. **Load** — write combined hourly data to the `weather_aqi_hourly` table
-4. **Report** — generate an HTML report with a temperature/precipitation chart and activity suggestions for the selected city
+2. **Unpack & clean** — keep today's `America/New_York` hours and validate value ranges
+3. **Load** — merge weather + AQI and write to the `weather_aqi_hourly` table
+4. **Report** — generate an HTML report with a temperature/precipitation chart and activity suggestions for the selected city (alerts are computed here, not during load)
 
 ## Project structure
 
 ```
 ├── pipelines/
-│   ├── daily_weather_aqi.py  # Extract, clean, and load data
-│   └── generate_report.py    # Generate HTML city report
+│   ├── daily_weather_aqi.py  # Extract, unpack, clean, and load (`run_daily_load`)
+│   ├── generate_report.py    # Generate HTML city report
+│   └── morning_job.py        # Optional: load + report + email
 ├── config.py               # Table names and timezone
 ├── connectors/
 │   ├── api_client.py       # Open-Meteo API client
@@ -88,6 +89,8 @@ python scripts/test_db_connection.py
 python -m pipelines.daily_weather_aqi
 ```
 
+This runs `run_daily_load()`: fetch city coordinates, pull weather and AQI, unpack today's New York hours, clean ranges, merge, and insert into `weather_aqi_hourly`. It prints how many rows were loaded. Other pipelines (such as `morning_job`) can import and call `run_daily_load()` instead of duplicating those steps.
+
 ### Generate a city report
 
 ```bash
@@ -103,7 +106,9 @@ city_data (Postgres)
     ↓
 Open-Meteo API → weather + AQI hourly data
     ↓
-clean & merge → weather_aqi_hourly (Postgres)
+unpack (today in America/New_York) → clean ranges → merge
+    ↓
+weather_aqi_hourly (Postgres)
     ↓
 calculate alerts → HTML report
 ```
@@ -111,5 +116,6 @@ calculate alerts → HTML report
 ## Notes
 
 - All times use the `America/New_York` timezone
-- Alerts are calculated for daytime hours (9am–8pm) and are not stored in the database — they are computed when generating a report
+- The daily load keeps only the current New York calendar day; it does not calculate alerts
+- Alerts are calculated for daytime hours (7am–8pm) when generating a report and are not stored in the database
 - Table names are configured in `config.py`

@@ -171,5 +171,5 @@ def calculate_alert_data(combined_dataframe):
 
 	metadata = pd.DataFrame(ALERT_DEFINITIONS)[["code", "category", "message"]]
 	return periods.merge(metadata, on="code").sort_values(
-		["city_id", "alert_date", "start_time", "code"]
+		["city_id", "alert_date", "code", "start_time"]
 	).reset_index(drop=True)[ALERT_COLUMNS]
