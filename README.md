@@ -10,6 +10,8 @@ A daily pipeline that fetches hourly weather and air quality data for multiple c
 4. **Report** — generate an HTML report with a temperature/precipitation chart and activity suggestions for the selected city (alerts are computed here, not during load)
 5. **Email** — send the HTML report via SMTP, with the chart embedded as a CID image so it displays in mail clients
 
+
+
 ## Project structure
 
 ```
@@ -34,7 +36,11 @@ A daily pipeline that fetches hourly weather and air quality data for multiple c
 └── .env.template           # Environment variable template
 ```
 
+
+
 ## Setup
+
+
 
 ### 1. Create a virtual environment
 
@@ -43,6 +49,8 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+
 
 ### 2. Configure environment variables
 
@@ -59,13 +67,15 @@ Fill in your Postgres credentials in `.env`. The project uses two database users
 
 **Email (SMTP)** — used by `jobs/email.py`:
 
-| Variable | Purpose |
-|----------|---------|
-| `SMTP_HOST` | Mail server (default in the template: `smtp.gmail.com`) |
-| `SMTP_PORT` | Port (template: `587` for STARTTLS) |
-| `SMTP_USER` | From address / SMTP login |
-| `SMTP_PASSWORD` | SMTP password |
-| `EMAIL_TO` | Recipient address |
+
+| Variable        | Purpose                                                 |
+| --------------- | ------------------------------------------------------- |
+| `SMTP_HOST`     | Mail server (default in the template: `smtp.gmail.com`) |
+| `SMTP_PORT`     | Port (template: `587` for STARTTLS)                     |
+| `SMTP_USER`     | From address / SMTP login                               |
+| `SMTP_PASSWORD` | SMTP password                                           |
+| `EMAIL_TO`      | Recipient address                                       |
+
 
 For Gmail, `SMTP_PASSWORD` must be an [App Password](https://support.google.com/accounts/answer/185833), not your normal Google password. 2-Step Verification has to be on for that account.
 
@@ -96,13 +106,19 @@ You also need a `city_data` table with `city_id`, `city_name`, `latitude`, and `
 python scripts/test_db_connection.py
 ```
 
+
+
 ## Usage
+
+
 
 ### Load daily weather and AQI data
 
 ```bash
 python -m pipelines.daily_weather_aqi
 ```
+
+
 
 ### Generate a city report
 
@@ -124,6 +140,8 @@ send_report_email("reports/sample/newport_2026-08-12.html", "Newport")
 
 The function reads SMTP settings from `.env`. Email clients often block inline `data:` images, so the chart is converted from a base64 data URI to a CID (Content-ID) attachment before sending.
 
+Email report sample
+
 ## Data flow
 
 ```
@@ -138,6 +156,8 @@ calculate alerts → HTML report
 email (SMTP, CID-embedded chart)
 ```
 
+
+
 ## Notes
 
 - All times use the `America/New_York` timezone
@@ -146,3 +166,4 @@ email (SMTP, CID-embedded chart)
 - Table names are configured in `config.py`
 - Copy `.env.template` to `.env` and fill in secrets; `.env` is gitignored
 - Gmail sending uses `SMTP_*` and `EMAIL_TO` in `.env` (App Password, not your account password)
+
