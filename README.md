@@ -140,7 +140,7 @@ send_report_email("reports/sample/newport_2026-08-12.html", "Newport")
 
 The function reads SMTP settings from `.env`. Email clients often block inline `data:` images, so the chart is converted from a base64 data URI to a CID (Content-ID) attachment before sending.
 
-Email report sample
+[Email report sample](/reports/sample/email.png)
 
 ## Data flow
 
