@@ -33,5 +33,5 @@ def get_postgres_connection(profile="readonly"):
     )
 
 
-def get_sqlalchemy_engine(profile="write"):
+def get_sqlalchemy_engine(profile="readonly"):
     return create_engine(_build_database_url(profile))

@@ -1,72 +1,73 @@
+import os
+from dotenv import load_dotenv
+import pandas as pd
 from connectors.api_client import get_openmeteo_client
 from connectors.db_client import get_postgres_connection
+from connectors.db_client import get_sqlalchemy_engine
 from config import CITY_DATA_TABLE
 
+load_dotenv()
+
+
 def get_city_data():
-    conn = get_postgres_connection("readonly")
+    engine = get_sqlalchemy_engine()
     try:
-        with conn.cursor() as cur:
-            cur.execute(f"SELECT city_id, latitude, longitude FROM {CITY_DATA_TABLE}")
-            return {
-                city_id: (latitude, longitude)
-                for city_id, latitude, longitude in cur.fetchall()
-            }
+        return pd.read_sql(
+            f"SELECT city_id, latitude, longitude FROM {CITY_DATA_TABLE}",
+            engine,
+        )
     finally:
-        conn.close()
+        engine.dispose()
+
+
+def prepare_params_for_weather_api(city_data):
+	url = os.getenv("WEATHER_API_URL")
+	params = {
+		"latitude": city_data["latitude"].tolist(),
+		"longitude": city_data["longitude"].tolist(),
+		"hourly": os.getenv("WEATHER_DATA_FIELDS").split(","),
+		"models": os.getenv("WEATHER_MODEL").split(","),
+		"forecast_days": os.getenv("WEATHER_FORECAST_DAYS"),
+	}
+	return url, params
+
 
 def get_weather_data(city_data):
-    # import logging
-    # logging.basicConfig(filename="weather.log",
-    # level=logging.ERROR,
-    # format="%(asctime)s %(levelname)s %(message)s")
-    
-    cities = list(city_data.keys())
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-	"latitude": [city_data[i][0] for i in cities],
-	"longitude": [city_data[i][1] for i in cities],
-	"hourly": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "rain", "precipitation_probability", "uv_index"],
-	"models": ["ncep_gfs_seamless"],
-	"forecast_days": 2,
-    }
-    
-    openmeteo = get_openmeteo_client()
-    try:
-        responses = openmeteo.weather_api(url, params = params)
-    except Exception as e:
-        # logging.exception(f"Failed to fetch weather data: {e}")
-        print(f"Failed to fetch weather data: {e}")
-        return None
-    
-    weather_data = {}
-    for i in range(len(cities)):
-        weather_data[cities[i]] = responses[i]
+	url, params = prepare_params_for_weather_api(city_data)
+	openmeteo = get_openmeteo_client()
+	try:
+		responses = openmeteo.weather_api(url, params=params)
+	except Exception as e:
+		print(f"Failed to fetch weather data: {e}")
+		return None
 
-    return weather_data
+	return {
+		city_id: responses[i]
+		for i, city_id in enumerate(city_data["city_id"])
+	}
+
+
+def prepare_params_for_aqi_api(city_data):
+	url = os.getenv("AQI_API_URL")
+	params = {
+		"latitude": city_data["latitude"].tolist(),
+		"longitude": city_data["longitude"].tolist(),
+		"hourly": os.getenv("AQI_DATA_FIELDS"),
+		"forecast_days": os.getenv("AQI_FORECAST_DAYS"),
+	}
+	return url, params
 
 def get_aqi_data(city_data):
-    openmeteo = get_openmeteo_client()
-    # Make sure all required weather variables are listed here
-    # The order of variables in hourly or daily is important to assign them correctly below
-    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
-    
-    cities = list(city_data.keys())
-    params = {
-        "latitude": [city_data[i][0] for i in cities],
-	    "longitude": [city_data[i][1] for i in cities],
-        "hourly": "us_aqi",
-        "forecast_days": 2,
-    }
-    try:
-        responses = openmeteo.weather_api(url, params = params)
-    except Exception as e:
-        # logging.exception(f"Failed to fetch AQI data: {e}")
-        print(f"Failed to fetch AQI data: {e}")
-        return None
+	openmeteo = get_openmeteo_client()
+	url, params = prepare_params_for_aqi_api(city_data)
+	try:
+		responses = openmeteo.weather_api(url, params=params)
+	except Exception as e:
+		print(f"Failed to fetch AQI data: {e}")
+		return None
 
-    aqi_data = {}
-    for i in range(len(cities)):
-        aqi_data[cities[i]] = responses[i]
-
-    return aqi_data
+	return {
+		city_id: responses[i]
+		for i, city_id in enumerate(city_data["city_id"])
+	}
 	
